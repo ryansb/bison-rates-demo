@@ -1,0 +1,29 @@
+[package]
+name = "hello-http"
+version = "0.1.0"
+edition = "2021"
+
+#[profile.release]
+#strip = true
+
+[dependencies]
+aws-config = "0.46.0"
+aws-sdk-dynamodb = "0.16.0"
+lambda_http = { version = "0.6", optional = true }
+lambda_runtime = { version = "0.6", optional = true }
+rayon = { version = "1.5", optional = true }
+tokio = { version = "1", features = ["macros"] }
+tower-http = { version = "0.3.4", features = ["trace"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+
+[features]
+# more useful in projects that are heterogenous
+default = ["lambda"]
+lambda = ["lambda_runtime", "lambda_http", "rayon"]
+
+[[bin]]
+name = "hello-http"
+path = "src/bin/hello-http.rs"
+test = false
+required-features = ["lambda"]

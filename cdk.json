@@ -1,0 +1,28 @@
+{
+  "app": ".venv/bin/python3 app.py",
+  "versionReporting": false,
+  "watch": {
+    "include": [
+      "hello-http/**",
+      "app.py",
+      "buffalo_rs/**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "Pipfile*",
+      "python/__pycache__",
+      "tests"
+    ]
+  },
+  "context": {
+    "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": true,
+    "@aws-cdk/core:stackRelativeExports": true,
+    "@aws-cdk/aws-lambda:recognizeVersionProps": true,
+    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+    "@aws-cdk/aws-cloudfront:defaultSecurityPolicyTLSv1.2_2021": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:target-partitions": ["aws"]
+  }
+}
