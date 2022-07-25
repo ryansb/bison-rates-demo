@@ -1,0 +1,58 @@
+[package]
+name = "bison-rates"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+aws-config = "0.46.0"
+aws-sdk-dynamodb = "0.16.0"
+aws-smithy-http-server = { git = "https://github.com/eduardomourar/smithy-rs", rev = "e05b302b058e21cc4d2f4d4acd63b3dd6b734972" }
+aws-smithy-types = { git = "https://github.com/eduardomourar/smithy-rs", rev = "e05b302b058e21cc4d2f4d4acd63b3dd6b734972" }
+lambda_http = { version = "0.6", optional = true }
+lambda_runtime = { version = "0.6", optional = true }
+rand = "0.8"
+rayon = { version = "1.5", optional = true }
+sdk-server-bison-rates = { path = "../sdk-server-bison-rates" }
+serde = "1"
+serde_json = "1"
+tokio = { version = "1", features = ["macros"] }
+tower-http = { version = "0.3.4", features = ["cors", "trace"] }
+tracing = { version = "0.1", features = ["log"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "json", "env-filter"] }
+ulid = "0.6"
+
+[features]
+# more useful in projects that are heterogenous
+default = ["lambda"]
+lambda = ["lambda_runtime", "lambda_http", "rayon"]
+
+[[bin]]
+name = "hello-http"
+path = "src/bin/01-hello-http.rs"
+test = false
+required-features = ["lambda"]
+
+[[bin]]
+name = "list-bison"
+path = "src/bin/02-list-bison.rs"
+test = false
+required-features = ["lambda"]
+
+[[bin]]
+name = "not-found"
+path = "src/bin/02-not-found.rs"
+test = false
+required-features = ["lambda"]
+
+[[bin]]
+name = "stubbed-api"
+path = "src/bin/03-stubbed-api.rs"
+test = false
+required-features = ["lambda"]
+
+[[bin]]
+name = "generated-api"
+path = "src/bin/04-generated-api.rs"
+test = false
+required-features = ["lambda"]

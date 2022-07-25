@@ -1,17 +1,14 @@
 import os
 import subprocess
 import sys
-from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
-from aws_cdk import (
-    RemovalPolicy,
-    Stack,
-    aws_iam as iam,
-    aws_lambda as func,
-    aws_logs as logs,
-)
+from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as func
+from aws_cdk import aws_logs as logs
 from constructs import Construct
 
 
@@ -22,24 +19,33 @@ def _mb_size(path: os.PathLike):
     return f"{path.stat().st_size / 2**20:.2f}MB"
 
 
-def rust_compile_to_zip(rust_dir: Path, function: str):
+@lru_cache
+def rust_compile(rust_dir: Path) -> Path:
+    """Given a function name (per cargo-lambda) and rust project, build a Lambda asset"""
     # nosemgrep: python.lang.security.audit.dangerous-subprocess-use.dangerous-subprocess-use
-    if rc := subprocess.check_call(
-        "cargo lambda build --arm64 --release --output-format zip".split(),
-        cwd=rust_dir,
-    ):
+
+    profile = ["--release"]
+    if os.getenv("BISON_ENV", "").lower() in ("p", "prod"):
+        profile = ["--profile", "prod"]
+    elif os.getenv("BISON_ENV", "").lower() in ("d", "dev"):
+        profile = ["--profile", "dev"]
+
+    command = "cargo lambda build --arm64 --output-format zip".split() + profile
+    print(" ".join(command), file=sys.stderr),
+    if rc := subprocess.check_call(command, cwd=rust_dir):
         print(f"error: cargo build failed with exit code {rc}", file=sys.stderr)
         raise Exception("Could not build asset")
+    return rust_dir / "target" / "lambda"
 
-    zip_path = rust_dir / "target" / "lambda" / function / "bootstrap.zip"
 
-    epoch_force = int(datetime(year=2020, month=2, day=20).timestamp())
-    # force mtime/ctime to avoid deploying unchanged artifact
-    os.utime(zip_path, (epoch_force, epoch_force))
+def rust_compile_to_zip(function: str, rust_dir: Path = Path(__file__).parent.parent) -> func.AssetCode:
+    """Given a function name (per cargo-lambda) and rust project, build a Lambda asset"""
 
-    print(f"rust asset: zipped_size={_mb_size(zip_path)}", file=sys.stderr)
+    zip_path = rust_compile(rust_dir) / function / "bootstrap.zip"
 
-    return zip_path
+    print(f"rust asset={function}/bootstrap.zip size={_mb_size(zip_path)}", file=sys.stderr)
+
+    return func.AssetCode.from_asset(str(zip_path))
 
 
 class Function(Construct):
@@ -52,9 +58,9 @@ class Function(Construct):
         scope: Construct,
         construct_id: str,
         code: func.Code,
-        handler: str,
         managed_policies: list[iam.IManagedPolicy],
         environment: dict[str, Any],
+        handler: str = "Runtime.UnusedName",
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -87,9 +93,10 @@ class Function(Construct):
             self,
             "Func",
             handler=handler,
-            runtime=func.Runtime.PYTHON_3_9,
+            runtime=func.Runtime.PROVIDED_AL2,
+            architecture=func.Architecture.ARM_64,
             code=code,
-            environment=environment,
+            environment={"RUST_BACKTRACE": "1"} | environment,
             role=self.role,
         )
 

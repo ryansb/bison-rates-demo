@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "crates/*",
+]
+
+[profile.prod]
+inherits = "release"
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "z"
