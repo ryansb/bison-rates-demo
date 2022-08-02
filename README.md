@@ -1,9 +1,9 @@
 
 # Bison Rates
 
-This is a blank project for CDK development with Python.
+This is a demo project for the Buffalo Rust meetup.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+See `presentation/` for slides.
 
 To use `pipenv` environment locally, run:
 
